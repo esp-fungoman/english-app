@@ -33,6 +33,6 @@ Lệnh chỉ thêm hồ sơ/liên kết còn thiếu, giữ nguyên nội dung v
 
 Chi tiết: `docs/TECH.md`. Kho từ Admin nằm tại `/content`, lịch mở unit tại `/units`. Seed chỉ khởi tạo khối 1–5; thêm từ và đặt lịch trong Admin. Xem `docs/RAILWAY.md` cho bản nâng cấp yêu cầu database sạch.
 
-## Lưu ảnh trên Cloudflare R2
+## Lưu ảnh trên Railway hoặc Cloudflare R2
 
-Xem [hướng dẫn tạo bucket, credentials và CORS](docs/R2.md). Điền R2_ACCOUNT_ID, R2_BUCKET_NAME, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY vào `.env` của API rồi khởi động lại API. Mẫu CORS local nằm ở `config/cloudflare/r2-cors.local.json`. Bucket dùng private access và URL ký sẵn; không cần đổi database.
+Railway: xem [cấu hình BUCKET\_\* và CORS](docs/RAILWAY.md#image-storage), điền credentials vào `.env` của API rồi khởi động lại API. Để trống các biến R2\_\* khi dùng Railway. Cloudflare R2: xem [hướng dẫn tạo bucket, credentials và CORS](docs/R2.md). Mẫu CORS local cho cả hai provider nằm ở `config/cloudflare/r2-cors.local.json`. Bucket dùng private access và URL ký sẵn; không cần đổi database.
