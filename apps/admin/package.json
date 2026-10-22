@@ -1,0 +1,27 @@
+{
+  "name": "admin",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "sourceRoot": "apps/admin/src",
+    "targets": {
+      "dev": {
+        "command": "next dev --port 3001",
+        "options": {
+          "cwd": "apps/admin"
+        }
+      },
+      "start": {
+        "command": "next start --port 3001",
+        "options": {
+          "cwd": "apps/admin"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "next": "~16.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

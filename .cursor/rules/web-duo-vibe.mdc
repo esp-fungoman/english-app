@@ -1,0 +1,64 @@
+---
+description: Kids playful UI — approved auth look is the source of truth
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Web kids vibe (approved)
+
+**Source of truth:** the shipping auth screens (`/`, `/login`, `/register`, `/onboarding/grade`). Match that energy on any new student UI. Duolingo-inspired patterns only — not a clone (no Duo, Feather/DIN, hearts, gems, Super).
+
+## Feel
+
+- Game for grades 1–5, not a textbook or SaaS form.
+- One job per screen. Big type, few controls, friendly Vietnamese copy.
+- Chunky “pressable” controls (ledge shadow). Celebrate correct; soft wrong — never hearts.
+
+## Tokens (`apps/web/src/app/global.css`)
+
+| Role | Token |
+| --- | --- |
+| Card / canvas | `--bg: #FFFFFF` |
+| Ink | `--ink: #3C3C3C` |
+| Muted | `--muted: #777777` |
+| Primary | `--accent: #58CC02` / ledge `--accent-ledge: #58A700` |
+| Wrong | `--bad: #FF4B4B` |
+| Star | `--star: #FFC800` |
+| Links | `--info: #1CB0F6` |
+| Neutral ledge | `--tile-ledge: #E5E5E5` |
+
+- **Fonts:** Nunito throughout student screens, including display text.
+- **Radius:** ~16px controls; every bounded student shape is rounded.
+
+## Canonical screen recipe (auth — keep this)
+
+Reuse these classes / structure when building similar flows:
+
+1. `.auth-hero` — soft lime band, full-width on mobile and a distinct side area on desktop
+2. `.mascot` (+ idle bounce) — our owl, not Duo
+3. `.speech` — one short kid line in a white bubble
+4. `.brand-pill` — tiny green chip (“Học từ vựng” / step label)
+5. `.field` with **2px border + `0 3px 0` ledge** (focus → green ledge)
+6. Primary `.btn` ledge CTA; playful sentence-case (“Vào học thôi”)
+7. `.auth-switch` footer link in `--info`
+
+## Layout
+
+- Mobile: compact, single-column, touch-first. Tablet: wider single-column layout.
+- Desktop ≥1024px: full-width unframed student layout with sensible content bounds. Auth, path, unit, report, and games may reorganize into columns while preserving DOM order and behavior.
+- At 1920×1080, a typical game question and its primary action should fit together. Use discrete larger type and targets at large breakpoints, not viewport-width font scaling. Allow scrolling on shorter screens; never clip feedback or controls.
+
+## Do / don’t
+
+```text
+✅ Hero band + mascot + speech on entry screens
+✅ Chunky green CTA + matching field ledges
+✅ Brand pill + short lede
+✅ Wide desktop compositions with readable classroom-sized game elements
+❌ Flat thin inputs next to a 3D button
+❌ Phone-sized desktop shell, decorative stage, or tiny controls on a TV
+❌ Copy Duo / purple AI gradients / hearts / paywalls
+❌ Redesign path/play “while touching auth” unless asked
+```
+
+Docs: `docs/UX.md`. Assets: ChatGPT Plus only (`images.mdc`).

@@ -1,0 +1,12 @@
+---
+description: Nest API and Prisma
+globs: apps/api/**/*.ts
+alwaysApply: false
+---
+
+# API
+
+- Prisma models camelCase; columns snake_case via `@map`. Tables plural snake (`@@map`).
+- `/api/admin/*` mutates curriculum; student routes read + write sessions/attempts only.
+- No `admin_users` table. Check `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
+- Follow `docs/DATA.md`.

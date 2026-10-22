@@ -1,0 +1,12 @@
+---
+description: Product constraints for the primary vocab app
+alwaysApply: true
+---
+
+# Product
+
+- Grades 1–5, Vietnamese chrome, English lemmas.
+- No teacher role. Student auth is username + password cookie.
+- Light unit path + stars. Calendar/admin lock only. No hearts. Old units stay playable.
+- Student UI on `apps/web` supports both mobile touch and classroom-readable desktop display; same game rules and account flow.
+- Follow `docs/PRODUCT.md` and `docs/DATA.md` for metrics and unit lock.

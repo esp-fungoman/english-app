@@ -1,0 +1,5 @@
+# Local host API only. Production API joins redis_private, without published Redis ports.
+services:
+  redis:
+    ports:
+      - '127.0.0.1:6379:6379'

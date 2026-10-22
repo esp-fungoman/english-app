@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ActivityType {
+  group
+  odd_letter
+  scramble
+  listen_spell
+
+  @@map("activity_type")
+}
+
+enum GroupMode {
+  single
+  board
+
+  @@map("group_mode")
+}
+
+model Grade {
+  id             String          @id @default(cuid())
+  level          Int             @unique
+  title          String
+  units          Unit[]
+  students       Student[]
+  reviewSessions ReviewSession[]
+
+  @@map("grades")
+}
+
+model Unit {
+  id         String            @id @default(cuid())
+  gradeId    String            @map("grade_id")
+  sortOrder  Int               @map("sort_order")
+  title      String
+  opensAt    DateTime?         @map("opens_at")
+  manualLock Boolean           @default(false) @map("manual_lock")
+  groupMode  GroupMode         @default(single) @map("group_mode")
+  grade      Grade             @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  words      UnitWord[]
+  activities UnitActivity[]
+  sessions   PracticeSession[]
+
+  @@unique([gradeId, sortOrder])
+  @@map("units")
+}
+
+model Category {
+  id        String             @id @default(cuid())
+  slug      String             @unique
+  titleVi   String             @map("title_vi")
+  words     WordCategory[]
+  unitWords UnitWordCategory[]
+
+  @@map("categories")
+}
+
+model Word {
+  id           String         @id @default(cuid())
+  lemma        String
+  meaningVi    String?        @map("meaning_vi")
+  meaningKey   String         @default("") @map("meaning_key")
+  searchText   String         @map("search_text")
+  initial      String
+  partOfSpeech String?        @map("part_of_speech")
+  imageKey     String?        @map("image_key")
+  audioKey     String?        @map("audio_key")
+  categories   WordCategory[]
+  units        UnitWord[]
+
+  @@unique([lemma, meaningKey])
+  @@index([initial, lemma, id])
+  @@map("words")
+}
+
+model UnitWord {
+  id              String             @id @default(cuid())
+  unitId          String             @map("unit_id")
+  wordId          String             @map("word_id")
+  active          Boolean            @default(true)
+  unit            Unit               @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  word            Word               @relation(fields: [wordId], references: [id], onDelete: Restrict)
+  categories      UnitWordCategory[]
+  attempts        Attempt[]
+  reviewQuestions ReviewQuestion[]
+
+  @@unique([unitId, wordId])
+  @@index([wordId, active])
+  @@map("unit_words")
+}
+
+model WordCategory {
+  wordId     String   @map("word_id")
+  categoryId String   @map("category_id")
+  word       Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([wordId, categoryId])
+  @@map("word_categories")
+}
+
+model UnitWordCategory {
+  unitWordId String   @map("unit_word_id")
+  categoryId String   @map("category_id")
+  unitWord   UnitWord @relation(fields: [unitWordId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([unitWordId, categoryId])
+  @@map("unit_word_categories")
+}
+
+model UnitActivity {
+  unitId       String       @map("unit_id")
+  activityType ActivityType @map("activity_type")
+  unit         Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@id([unitId, activityType])
+  @@map("unit_activities")
+}
+
+model Student {
+  id             String            @id @default(cuid())
+  username       String            @unique
+  passwordHash   String            @map("password_hash")
+  displayName    String            @map("display_name")
+  avatarKey      String?           @map("avatar_key")
+  school         String?
+  className      String?           @map("class_name")
+  gradeId        String?           @map("grade_id")
+  grade          Grade?            @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  sessions       PracticeSession[]
+  reviewSessions ReviewSession[]
+
+  @@map("students")
+}
+
+model PracticeSession {
+  id           String       @id @default(cuid())
+  studentId    String       @map("student_id")
+  unitId       String       @map("unit_id")
+  activityType ActivityType @map("activity_type")
+  startedAt    DateTime     @default(now()) @map("started_at")
+  endedAt      DateTime?    @map("ended_at")
+  activeMs     Int          @default(0) @map("active_ms")
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit         Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  attempts     Attempt[]
+
+  @@map("practice_sessions")
+}
+
+model Attempt {
+  id         String          @id @default(cuid())
+  sessionId  String          @map("session_id")
+  wordId     String          @map("word_id")
+  sortOrder  Int             @map("sort_order")
+  correct    Boolean?
+  promptJson Json            @map("prompt_json")
+  answerJson Json?           @map("answer_json")
+  durationMs Int?            @map("duration_ms")
+  session    PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  word       UnitWord        @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@map("attempts")
+}
+
+model ReviewSession {
+  id        String           @id @default(cuid())
+  studentId String           @map("student_id")
+  gradeId   String           @map("grade_id")
+  startedAt DateTime         @default(now()) @map("started_at")
+  endedAt   DateTime?        @map("ended_at")
+  activeMs  Int              @default(0) @map("active_ms")
+  student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  grade     Grade            @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  questions ReviewQuestion[]
+
+  @@index([studentId, gradeId, startedAt])
+  @@map("review_sessions")
+}
+
+model ReviewQuestion {
+  id             String        @id @default(cuid())
+  sessionId      String        @map("session_id")
+  wordId         String        @map("word_id")
+  sortOrder      Int           @map("sort_order")
+  choiceIds      Json          @map("choice_ids")
+  promptJson     Json?         @map("prompt_json")
+  selectedWordId String?       @map("selected_word_id")
+  correct        Boolean?
+  session        ReviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  word           UnitWord      @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, sortOrder])
+  @@map("review_questions")
+}

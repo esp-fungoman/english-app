@@ -1,0 +1,11 @@
+---
+description: Admin CMS Next.js app
+globs: apps/admin/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Admin
+
+- Desktop forms for grades, units, words, categories, locks, uploads.
+- No mini-game UI.
+- Auth is mock env username/password via the API, not a user table.

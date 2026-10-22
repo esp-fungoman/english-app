@@ -1,0 +1,11 @@
+---
+description: Do not generate curriculum or UI images in the agent
+alwaysApply: true
+---
+
+# Images
+
+- Never call OpenAI Images, DALL·E, or Cursor image gen for this repo.
+- Word art: human upload in admin only.
+- For UI assets, output a ChatGPT Plus prompt and wait for the file.
+- See `docs/UX.md`.

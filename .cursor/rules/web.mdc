@@ -1,0 +1,13 @@
+---
+description: Student Next.js app
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Web
+
+- App Router. Responsive mobile and wide desktop/TV layouts; desktop must not retain a phone-sized shell. Hit targets ≥ 44px, larger for classroom play.
+- Vietnamese copy except the English lemma on tiles.
+- Vocab audio: `speechSynthesis` (`en-US`), start from a tap.
+- No CMS screens here (`apps/admin` owns those).
+- Visual language: follow `.cursor/rules/web-duo-vibe.mdc` + `docs/UX.md`. Keep the approved child-friendly colors and controls while allowing desktop content to reflow. Do not change game behavior as part of responsive layout work.
