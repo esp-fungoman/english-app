@@ -60,6 +60,22 @@ Keep all `R2_*` values empty when selecting Railway: a nonempty R2 setting selec
 
 Configure bucket CORS separately for the Web and Admin origins. The S3 CORS JSON in `config/cloudflare/r2-cors.local.json` also works with Railway's `PutBucketCors` operation. It allows local origins `http://localhost:3000` and `http://localhost:3001`; add the deployed frontend origins before production use.
 
+To apply CORS using the API service's existing `BUCKET_*`, `WEB_ORIGIN`, and `ADMIN_ORIGIN` variables, run:
+
+```sh
+node scripts/configure-storage-cors.cjs
+```
+
+For dashboard-only setup, set the API's **Pre-Deploy Command** to:
+
+```sh
+node scripts/configure-storage-cors.cjs && pnpm exec prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+```
+
+Deploy the commit containing the script. It adds an `english-app-browser-images` CORS rule, preserving unrelated rules and previously allowed origins in its own rule. Repeated runs do not duplicate the rule. It changes bucket CORS only, without uploading/deleting objects or logging credentials. A permission/network error stops pre-deploy; fix the storage configuration and retry. The log should say `Storage CORS configured for:` followed by both frontend origins. After success, the pre-deploy command may remain as configured or be restored to the migration command alone.
+
+Retry image upload from Admin after this completes; URL signing alone does not prove that browser PUT/GET operations are allowed. If the browser cached a failed preflight, reload with DevTools cache disabled or retry after the cache expires.
+
 Admin images use `POST /api/admin/uploads/presign`; avatars use `POST /api/student/uploads/presign`. The browser then PUTs the image to the signed URL with the returned `Content-Type`, without application cookies or `X-App-Request`, and saves the object key through the existing word/profile endpoint. `/api/media?key=...` returns a signed GET URL for saved media. The bucket stays private; no schema change is needed.
 
 ## Vocabulary library release (fresh database)
