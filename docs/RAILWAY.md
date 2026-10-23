@@ -12,7 +12,36 @@ Env on api: `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `WEB_ORIGIN`, `A
 
 CORS on the API must list both frontend public URLs.
 
-## Image storage
+## Login on separate Railway frontend domains
+
+Both Next.js apps support proxying `/api/:path*` to `API_UPSTREAM_URL`. This keeps signed HttpOnly cookies on the frontend's own origin while Nest still validates the original browser Origin and `X-App-Request` header. Leave the proxy variable unset for the existing direct-API local setup.
+
+On the API service, set:
+
+```dotenv
+WEB_ORIGIN=https://english-app-web.up.railway.app
+ADMIN_ORIGIN=https://english-app-admin.up.railway.app
+```
+
+On the **web** service, set:
+
+```dotenv
+NEXT_PUBLIC_API_URL=https://english-app-web.up.railway.app
+API_UPSTREAM_URL=https://english-app-api.up.railway.app
+```
+
+On the **admin** service, set:
+
+```dotenv
+NEXT_PUBLIC_API_URL=https://english-app-admin.up.railway.app
+API_UPSTREAM_URL=https://english-app-api.up.railway.app
+```
+
+Use the active API domain from its Networking settings if different. These settings are read during the frontend build: rebuild both frontends after changing them. The upstream must be the API origin, never the frontend itself. No `/api` suffix or trailing slash is needed in any value.
+
+Add both frontend origins to the active bucket's CORS rules while preserving existing allowed origins. Browser image PUTs still go directly to storage and require bucket CORS. The proxy carries API requests, cookies, and upload-presign responses; it does not proxy image bytes.
+
+## Image storage configuration
 
 The existing vocabulary and student-avatar flows support Railway through `BUCKET_*`. Add these variables to the root `.env` for local development, or to the API service environment when deploying:
 

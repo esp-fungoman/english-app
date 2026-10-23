@@ -6,7 +6,7 @@ Exactly one admin is configured by `ADMIN_USERNAME` / `ADMIN_PASSWORD`. No admin
 
 StudentGuard remains a signature/expiry check that attaches the student ID without querying the database. Student cookies last 30 days. Controllers enforce record ownership, current grade, locked-unit rules and recorded-answer semantics. Logout clears the browser cookie; copied cookies remain valid until expiry or secret rotation.
 
-Cookies are HttpOnly, SameSite=Lax, host-only, Path=/, Secure in production. Use HTTPS Web, Admin and API under the same registrable domain in production. Unrelated hosting-provider domains require a separate cookie/topology design; do not switch to SameSite=None without revisiting CSRF and browser third-party cookie restrictions.
+Cookies are HttpOnly, SameSite=Lax, host-only, Path=/, Secure in production. Direct browser-to-API requests require HTTPS Web, Admin and API under the same registrable domain. For separate Railway domains, configure the frontend `/api` rewrites with `API_UPSTREAM_URL` and point each frontend's `NEXT_PUBLIC_API_URL` at its own public origin; see [RAILWAY.md](RAILWAY.md#login-on-separate-railway-frontend-domains). Cookies then belong to the frontend host, and API requests retain the original Origin checks. Do not switch to SameSite=None without revisiting CSRF and browser third-party cookie restrictions.
 
 Production requires valid `WEB_ORIGIN`, `ADMIN_ORIGIN`, independent admin/student secrets of at least 32 characters, non-default admin credentials and `REDIS_URL`. Generate secrets with a cryptographically secure generator; never copy example credentials into production. `RATE_LIMIT_SECRET` optionally overrides the admin secret for HMAC-hashed rate-limit identities. No secrets belong in NEXT_PUBLIC variables.
 
