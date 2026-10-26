@@ -31,6 +31,7 @@ import {
 } from './round';
 
 import { flattenWord, unitWordInclude } from '../curriculum/words';
+import { groupWordsForUnit } from '../curriculum/group-words';
 
 const ACTIVITIES = Object.values(ActivityType);
 const sessionInclude = {
@@ -216,21 +217,24 @@ export class PlayController {
     return units.map((rawUnit) => {
       const unit = { ...rawUnit, words: rawUnit.words.map(flattenWord) };
       const activityProgress = progress(activityCounts(unit.sessions));
-      const categories = categoryChoices(unit.words);
+      const groupWords = groupWordsForUnit(rawUnit, units);
+      const categories = categoryChoices(groupWords);
       const boardAvailable =
         unit.groupMode === GroupMode.board
           ? buildGroupBoard(
-              unit.words.filter((word) => /^[a-z]{1,12}$/.test(word.lemma)),
+              groupWords.filter((word) => /^[a-z]{1,12}$/.test(word.lemma)),
               categories,
+              unit.groupIncludePreviousUnits,
             ) !== null
           : false;
       const hasContent = unit.activities.some(({ activityType }) =>
         activityType === ActivityType.group &&
         unit.groupMode === GroupMode.board
           ? boardAvailable
-          : unit.words.some((word) =>
-              isUsableWord(activityType, word, categories),
-            ),
+          : (activityType === ActivityType.group
+              ? groupWords
+              : unit.words
+            ).some((word) => isUsableWord(activityType, word, categories)),
       );
       return {
         id: unit.id,
@@ -261,14 +265,17 @@ export class PlayController {
     if (!rawUnit) throw new NotFoundException('Unit không tồn tại');
     const unit = { ...rawUnit, words: rawUnit.words.map(flattenWord) };
     await this.requireStudentGrade(req, unit.gradeId);
-    const categories = categoryChoices(unit.words);
-    const boardAvailable =
+    const groupWords = await this.groupWordPool(rawUnit);
+    const categories = categoryChoices(groupWords);
+    const board =
       unit.groupMode === GroupMode.board
         ? buildGroupBoard(
-            unit.words.filter((word) => /^[a-z]{1,12}$/.test(word.lemma)),
+            groupWords.filter((word) => /^[a-z]{1,12}$/.test(word.lemma)),
             categories,
-          ) !== null
-        : false;
+            unit.groupIncludePreviousUnits,
+          )
+        : null;
+    const boardAvailable = board !== null;
     const activities = ACTIVITIES.filter((type) =>
       unit.activities.some((a) => a.activityType === type),
     ).map((type) => ({
@@ -276,7 +283,9 @@ export class PlayController {
       available:
         type === ActivityType.group && unit.groupMode === GroupMode.board
           ? boardAvailable
-          : unit.words.some((word) => isUsableWord(type, word, categories)),
+          : (type === ActivityType.group ? groupWords : unit.words).some(
+              (word) => isUsableWord(type, word, categories),
+            ),
     }));
     return {
       id: unit.id,
@@ -286,6 +295,13 @@ export class PlayController {
       groupMode: unit.groupMode,
       ...unitAccess(unit),
       wordCount: unit.words.length,
+      groupIncludePreviousUnits: unit.groupIncludePreviousUnits,
+      groupWordCount:
+        unit.groupMode === GroupMode.board
+          ? (board?.words.length ?? 0)
+          : groupWords.filter((word) =>
+              isUsableWord(ActivityType.group, word, categories),
+            ).length,
       categoryTitles: categories.map((category) => category.titleVi),
       activities,
       progress: progress(activityCounts(unit.sessions)),
@@ -321,22 +337,24 @@ export class PlayController {
     if (!unit.activities.some((entry) => entry.activityType === activity)) {
       throw new ForbiddenException('Hoạt động chưa mở');
     }
-    const categories = categoryChoices(unit.words);
+    const cumulative =
+      activity === ActivityType.group && unit.groupIncludePreviousUnits;
+    const pool = cumulative ? await this.groupWordPool(rawUnit) : unit.words;
+    const categories = categoryChoices(pool);
     const board =
       activity === ActivityType.group && unit.groupMode === GroupMode.board
         ? buildGroupBoard(
-            unit.words.filter((word) => /^[a-z]{1,12}$/.test(word.lemma)),
+            pool.filter((word) => /^[a-z]{1,12}$/.test(word.lemma)),
             categories,
+            cumulative,
           )
         : null;
     const words =
       activity === ActivityType.group && unit.groupMode === GroupMode.board
         ? (board?.words ?? [])
         : shuffle(
-            unit.words.filter((word) =>
-              isUsableWord(activity, word, categories),
-            ),
-          ).slice(0, 8);
+            pool.filter((word) => isUsableWord(activity, word, categories)),
+          ).slice(0, cumulative ? undefined : 8);
     if (!words.length)
       throw new BadRequestException('Hoạt động chưa có đủ nội dung');
     const session = await this.prisma.practiceSession.create({
@@ -351,6 +369,7 @@ export class PlayController {
             promptJson: board
               ? {
                   mode: GroupMode.board,
+                  cumulative,
                   lemma: word.lemma.trim().toLowerCase(),
                   acceptedCategoryIds: word.categories
                     .map((entry) => entry.categoryId)
@@ -378,7 +397,8 @@ export class PlayController {
     if (!session) throw new NotFoundException('Vòng chơi không tồn tại');
     if (session.studentId !== studentIdFromRequest(req))
       throw new ForbiddenException();
-    if (!session.endedAt) await this.requireSessionAccess(req, session.unitId);
+    if (!session.endedAt)
+      await this.requireSessionAccess(req, session.unitId, session.id);
     return this.formatSession(session);
   }
 
@@ -396,7 +416,7 @@ export class PlayController {
     if (session.studentId !== studentIdFromRequest(req))
       throw new ForbiddenException();
     if (session.endedAt) throw new ForbiddenException('Vòng chơi đã kết thúc');
-    await this.requireSessionAccess(req, session.unitId);
+    await this.requireSessionAccess(req, session.unitId, session.id);
     const delta = Number(body?.activeMsDelta);
     if (!Number.isFinite(delta) || delta < 0)
       throw new BadRequestException('Thời gian không hợp lệ');
@@ -446,7 +466,11 @@ export class PlayController {
     if (prompt.mode === GroupMode.board)
       throw new BadRequestException('Bảng phân nhóm cần kiểm tra cả bảng');
     if (attempt.correct === null) {
-      await this.requireSessionAccess(req, attempt.session.unitId);
+      await this.requireSessionAccess(
+        req,
+        attempt.session.unitId,
+        attempt.session.id,
+      );
       if (attempt.session.endedAt)
         throw new ForbiddenException('Vòng chơi đã kết thúc');
       const answer = body?.answer;
@@ -509,7 +533,8 @@ export class PlayController {
       if (
         !Array.isArray(groups) ||
         groups.length < 2 ||
-        groups.length > 4 ||
+        (groups.length > 4 &&
+          !prompts.every((prompt) => prompt.cumulative === true)) ||
         groupIds.size !== groups.length ||
         prompts.some((prompt) => {
           const choices = prompt.choices as { id: string }[] | undefined;
@@ -551,7 +576,7 @@ export class PlayController {
         return this.formatSession(session);
       if (session.endedAt)
         throw new ForbiddenException('Vòng chơi đã kết thúc');
-      await this.requireSessionAccess(req, session.unitId);
+      await this.requireSessionAccess(req, session.unitId, session.id);
       if (session.attempts.some((attempt) => attempt.correct !== null))
         throw new BadRequestException('Bảng đã được kiểm tra một phần');
 
@@ -575,12 +600,43 @@ export class PlayController {
     });
   }
 
-  private async requireSessionAccess(req: Request, unitId: string) {
+  private async groupWordPool(
+    unit: Prisma.UnitGetPayload<{
+      include: { words: { include: typeof unitWordInclude } };
+    }>,
+  ) {
+    if (!unit.groupIncludePreviousUnits) return unit.words.map(flattenWord);
+    const sources = await this.prisma.unit.findMany({
+      where: { gradeId: unit.gradeId, sortOrder: { lte: unit.sortOrder } },
+      include: { words: { where: { active: true }, include: unitWordInclude } },
+    });
+    return groupWordsForUnit(unit, sources);
+  }
+
+  private async requireSessionAccess(
+    req: Request,
+    unitId: string,
+    sessionId: string,
+  ) {
     const unit = await this.prisma.unit.findUnique({ where: { id: unitId } });
     if (!unit) throw new NotFoundException('Unit không tồn tại');
     await this.requireStudentGrade(req, unit.gradeId);
     if (!isUnitOpen(unit.opensAt, unit.manualLock))
       throw new ForbiddenException('Unit đang khóa hoặc chưa đến giờ mở');
+    const lockedSource = await this.prisma.unit.findFirst({
+      where: {
+        id: { not: unitId },
+        words: { some: { attempts: { some: { sessionId, correct: null } } } },
+        OR: [
+          { manualLock: true },
+          { opensAt: null },
+          { opensAt: { gt: new Date() } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (lockedSource)
+      throw new ForbiddenException('Unit chứa từ trong lượt chơi đã bị khóa');
   }
 
   private formatSession(session: SessionWithItems) {

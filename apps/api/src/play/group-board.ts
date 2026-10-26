@@ -6,12 +6,31 @@ export type BoardWord = RoundWord & { id: string };
 export function buildGroupBoard<T extends BoardWord>(
   words: T[],
   categories: CategoryChoice[],
+  includeAll = false,
 ): { words: T[]; groups: CategoryChoice[] } | null {
   const usable = words.filter((word) =>
     isUsableWord(ActivityType.group, word, categories),
   );
   const choices = shuffle(categories);
   if (usable.length < 2 || choices.length < 2) return null;
+
+  if (includeAll) {
+    let all = usable;
+    while (all.length >= 2) {
+      const used = new Set(
+        all.flatMap((word) => word.categories.map((entry) => entry.categoryId)),
+      );
+      const groups = choices.filter((choice) => used.has(choice.id));
+      const playable = all.filter((word) =>
+        isUsableWord(ActivityType.group, word, groups),
+      );
+      if (groups.length >= 2 && playable.length === all.length)
+        return { words: shuffle(all), groups };
+      if (playable.length === all.length) break;
+      all = playable;
+    }
+    return null;
+  }
 
   for (
     let size = Math.min(4, choices.length, usable.length);

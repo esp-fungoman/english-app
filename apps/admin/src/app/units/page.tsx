@@ -47,6 +47,7 @@ function UnitEditor({
     groupMode: unit?.groupMode ?? 'single',
     opensAt: toLocalInput(unit?.opensAt ?? null),
     manualLock: unit?.manualLock ?? false,
+    groupIncludePreviousUnits: unit?.groupIncludePreviousUnits ?? false,
     activityTypes:
       unit?.activities.map((item) => item.activityType) ??
       (Object.keys(ACTIVITIES) as Activity[]),
@@ -216,6 +217,24 @@ function UnitEditor({
               </label>
             ))}
           </section>
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={draft.groupIncludePreviousUnits}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  groupIncludePreviousUnits: event.target.checked,
+                })
+              }
+            />
+            Ghép từ theo nhóm: lấy từ Unit 1 đến unit này
+          </label>
+          <p className="muted">
+            Chỉ lấy các unit đã mở trong cùng khối. Mỗi lượt chơi hết toàn bộ từ
+            hợp lệ, không giới hạn 8 từ. Từ dùng chung chỉ xuất hiện một lần,
+            lấy category của unit đã mở gần nhất.
+          </p>
           <label>
             Chế độ ghép từ theo nhóm
             <select

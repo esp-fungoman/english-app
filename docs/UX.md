@@ -29,7 +29,7 @@ Kho từ nhóm A–Z, nhóm Khác cho ký tự ngoài A–Z; TOC có số lượ
 
 Drawer sửa từ/nghĩa/loại từ/ảnh/category mặc định và các unit sử dụng; full-screen ở màn hẹp. Cảnh báo chưa lưu; Lưu và mở từ tiếp theo dùng thứ tự danh sách trước khi lưu. Ảnh upload lúc lưu, lỗi giữ bản nháp và key đã PUT để thử lại. Cùng cách viết có các nghĩa khác nhau; gợi ý hồ sơ đã tồn tại và cho mở để dùng lại. Nghĩa/ảnh/loại từ dùng chung, hiển thị unit chịu ảnh hưởng. Category riêng từng unit được sao chép từ mặc định khi gắn lần đầu.
 
-Trang unit có tạo/sửa, cấu hình hoạt động, chế độ phân nhóm, ngày giờ mở theo Việt Nam, khóa tay và đặt lịch hàng loạt. Có xem trước quyền học hiện tại theo khối. Bốn trạng thái: Chưa đặt lịch / Chờ mở / Đang mở / Khóa tay. Cảnh báo nếu thay đổi khóa unit đang mở. Phía học sinh hiển thị ngày mở hoặc lý do khóa; khi bị khóa giữa phiên dừng câu chưa trả lời và cho kết thúc phiên.
+Trang unit có tạo/sửa, cấu hình hoạt động, chế độ phân nhóm, ngày giờ mở theo Việt Nam, khóa tay và đặt lịch hàng loạt. Có tùy chọn gom từ các unit đã mở từ Unit 1 đến unit hiện tại cho Ghép từ theo nhóm; lượt tích lũy chơi hết từ hợp lệ và phần giới thiệu hiển thị số từ thay vì “Tối đa 8 từ”. Có xem trước quyền học hiện tại theo khối. Bốn trạng thái: Chưa đặt lịch / Chờ mở / Đang mở / Khóa tay. Cảnh báo nếu thay đổi khóa unit đang mở. Phía học sinh hiển thị ngày mở hoặc lý do khóa; khi bị khóa giữa phiên dừng câu chưa trả lời và cho kết thúc phiên.
 
 Nhập Excel có tải mẫu, chọn file, xem trước, xác nhận và báo lỗi theo tab/dòng/cột. Category của từng dòng áp dụng theo unit, hồ sơ theo từ/nghĩa được dùng chung. Unit mới chưa đặt lịch bị khóa. Không có hàng đợi ảnh tách rời; dùng bộ lọc Thiếu ảnh và drawer trong kho từ.
 

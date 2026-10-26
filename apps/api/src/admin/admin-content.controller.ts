@@ -14,11 +14,14 @@ import {
 import { ActivityType, GroupMode, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  choicesFor,
   boardAvailable,
   flattenWord,
   unitWordInclude,
 } from '../curriculum/words';
+import { buildGroupBoard } from '../play/group-board';
 import { unitAccess } from '../play/round';
+import { groupWordsForUnit } from '../curriculum/group-words';
 import { AdminGuard } from './admin.guard';
 import {
   cleanText,
@@ -60,12 +63,21 @@ export class AdminContentController {
     });
     return grades.map((grade) => ({
       ...grade,
-      units: grade.units.map(({ words, ...unit }) => ({
-        ...unit,
-        ...unitAccess(unit),
-        wordCount: words.length,
-        boardAvailable: boardAvailable(words.map(flattenWord)),
-      })),
+      units: grade.units.map((rawUnit) => {
+        const { words, ...unit } = rawUnit;
+        return {
+          ...unit,
+          ...unitAccess(unit),
+          wordCount: words.length,
+          boardAvailable: unit.groupIncludePreviousUnits
+            ? buildGroupBoard(
+                groupWordsForUnit(rawUnit, grade.units),
+                choicesFor(groupWordsForUnit(rawUnit, grade.units)),
+                true,
+              ) !== null
+            : boardAvailable(words.map(flattenWord)),
+        };
+      }),
     }));
   }
   @Post('units')
@@ -78,6 +90,7 @@ export class AdminContentController {
       groupMode?: GroupMode;
       opensAt?: string | null;
       manualLock?: boolean;
+      groupIncludePreviousUnits?: boolean;
       activityTypes?: ActivityType[];
     },
   ) {
@@ -91,6 +104,7 @@ export class AdminContentController {
           groupMode: data.groupMode,
           opensAt: data.opensAt,
           manualLock: data.manualLock,
+          groupIncludePreviousUnits: data.groupIncludePreviousUnits,
           activities: {
             create: (body.activityTypes ?? Object.values(ActivityType)).map(
               (activityType) => ({ activityType }),
@@ -110,6 +124,7 @@ export class AdminContentController {
       groupMode?: GroupMode;
       opensAt?: string | null;
       manualLock?: boolean;
+      groupIncludePreviousUnits?: boolean;
       activityTypes?: ActivityType[];
     },
   ) {
@@ -227,6 +242,7 @@ export class AdminContentController {
       groupMode?: GroupMode;
       opensAt?: string | null;
       manualLock?: boolean;
+      groupIncludePreviousUnits?: boolean;
       activityTypes?: ActivityType[];
     },
     create = false,
@@ -252,6 +268,11 @@ export class AdminContentController {
       !Object.values(GroupMode).includes(body.groupMode)
     )
       throw new BadRequestException('Chế độ phân nhóm không hợp lệ');
+    if (
+      body.groupIncludePreviousUnits !== undefined &&
+      typeof body.groupIncludePreviousUnits !== 'boolean'
+    )
+      throw new BadRequestException('Tùy chọn gom từ phải là boolean');
     if (body.manualLock !== undefined && typeof body.manualLock !== 'boolean')
       throw new BadRequestException('Trạng thái khóa không hợp lệ');
     if (
@@ -269,6 +290,9 @@ export class AdminContentController {
         : {}),
       ...(body.sortOrder !== undefined ? { sortOrder: body.sortOrder } : {}),
       ...(body.groupMode !== undefined ? { groupMode: body.groupMode } : {}),
+      ...(body.groupIncludePreviousUnits !== undefined
+        ? { groupIncludePreviousUnits: body.groupIncludePreviousUnits }
+        : {}),
       ...(body.manualLock !== undefined ? { manualLock: body.manualLock } : {}),
       ...(body.opensAt !== undefined ? { opensAt: date(body.opensAt) } : {}),
     };

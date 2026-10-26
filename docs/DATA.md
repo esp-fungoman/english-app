@@ -5,7 +5,7 @@ Cột Postgres **snake_case**. Prisma field camelCase + `@map`. Bảng plural sn
 ## Curriculum
 
 - `grades`: khối 1–5. Migration/seed khởi tạo các khối, không nạp từ mẫu.
-- `units`: `grade_id`, `sort_order` (1–10), `title`, `opens_at` (UTC, nullable), `manual_lock`, `group_mode`.
+- `units`: `grade_id`, `sort_order` (1–10), `title`, `opens_at` (UTC, nullable), `manual_lock`, `group_mode`, `group_include_previous_units` (boolean, mặc định false; chỉ áp dụng game group, xem ACTIVITIES.md).
 - `words`: hồ sơ dùng chung theo từ và nghĩa; `lemma`, `meaning_vi`, `meaning_key`, `part_of_speech`, `image_key`, `audio_key`, `search_text`, `initial`.
 - `lemma` và `meaning_key` trim, gộp khoảng trắng, chuyển chữ thường; unique `(lemma, meaning_key)`. Cùng cách viết được có nhiều nghĩa. Tạo nghĩa mới cho từ đã có cần điền nghĩa.
 - `search_text`: từ và nghĩa được chuẩn hóa không dấu, phục vụ tìm kiếm; `initial`: A–Z hoặc `#`.

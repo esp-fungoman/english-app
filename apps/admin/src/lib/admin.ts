@@ -25,6 +25,7 @@ export type Unit = {
   title: string;
   sortOrder: number;
   manualLock: boolean;
+  groupIncludePreviousUnits: boolean;
   opensAt: string | null;
   open: boolean;
   lockReason: string | null;

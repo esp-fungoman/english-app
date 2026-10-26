@@ -87,6 +87,7 @@ export default function PlayPage() {
   const [introMode, setIntroMode] = useState<'single' | 'board'>('single');
   const [canStart, setCanStart] = useState(false);
   const [session, setSession] = useState<GameSession | null>(null);
+  const [groupWordCount, setGroupWordCount] = useState<number | null>(null);
   const [placements, setPlacements] = useState<Record<string, string>>({});
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number[]>([]);
@@ -167,6 +168,8 @@ export default function PlayPage() {
       const unit = await api<{
         title: string;
         gradeId: string;
+        groupIncludePreviousUnits: boolean;
+        groupWordCount: number;
         open: boolean;
         opensAt: string | null;
         lockReason: string | null;
@@ -183,6 +186,11 @@ export default function PlayPage() {
       setCanStart(available);
       setLockMessage(unit.open ? '' : unitLockMessage(unit));
       setUnitTitle(unit.title);
+      setGroupWordCount(
+        activity === 'group' && unit.groupIncludePreviousUnits
+          ? unit.groupWordCount
+          : null,
+      );
       setIntroMode(unit.groupMode);
       setWasMastered(unit.progress?.[activity]?.mastered ?? null);
       setStudentId(me.id);
@@ -782,7 +790,10 @@ export default function PlayPage() {
                 {GameIcon ? <GameIcon size={34} /> : null}
               </span>
               <p className="brand-pill">
-                {unitTitle || 'Trò chơi'} · Tối đa 8 từ
+                {unitTitle || 'Trò chơi'} ·{' '}
+                {groupWordCount === null
+                  ? 'Tối đa 8 từ'
+                  : `Toàn bộ ${groupWordCount} từ hợp lệ`}
               </p>
               <h1>{details?.label ?? 'Trò chơi'}</h1>
               {activity === 'group' ? (

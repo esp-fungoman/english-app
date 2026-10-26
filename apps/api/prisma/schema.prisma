@@ -35,17 +35,18 @@ model Grade {
 }
 
 model Unit {
-  id         String            @id @default(cuid())
-  gradeId    String            @map("grade_id")
-  sortOrder  Int               @map("sort_order")
-  title      String
-  opensAt    DateTime?         @map("opens_at")
-  manualLock Boolean           @default(false) @map("manual_lock")
-  groupMode  GroupMode         @default(single) @map("group_mode")
-  grade      Grade             @relation(fields: [gradeId], references: [id], onDelete: Cascade)
-  words      UnitWord[]
-  activities UnitActivity[]
-  sessions   PracticeSession[]
+  id                        String            @id @default(cuid())
+  gradeId                   String            @map("grade_id")
+  sortOrder                 Int               @map("sort_order")
+  title                     String
+  opensAt                   DateTime?         @map("opens_at")
+  manualLock                Boolean           @default(false) @map("manual_lock")
+  groupIncludePreviousUnits Boolean           @default(false) @map("group_include_previous_units")
+  groupMode                 GroupMode         @default(single) @map("group_mode")
+  grade                     Grade             @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  words                     UnitWord[]
+  activities                UnitActivity[]
+  sessions                  PracticeSession[]
 
   @@unique([gradeId, sortOrder])
   @@map("units")
