@@ -179,13 +179,13 @@ export async function parseWordImport(buffer: Buffer): Promise<ParsedImport> {
         'INVALID_GRADE',
         'Khối phải từ 1 đến 5.',
       );
-    if (!Number.isInteger(number) || number < 1 || number > 10)
+    if (!Number.isInteger(number) || number < 1)
       error(
         'Units',
         row,
         'unit_number',
         'INVALID_UNIT_NUMBER',
-        'Số unit phải từ 1 đến 10.',
+        'Số unit phải là số nguyên từ 1.',
       );
     if (!title || title.length > 120)
       error(
@@ -248,7 +248,7 @@ export async function parseWordImport(buffer: Buffer): Promise<ParsedImport> {
       const categoryCodes = [7, 8, 9, 10]
         .map((col) => get(col).toLowerCase())
         .filter(Boolean);
-      if (!/^K[1-5]-U(0[1-9]|10)$/.test(unitCode))
+      if (!/^K[1-5]-U(0[1-9]|[1-9]\d+)$/.test(unitCode))
         error(
           'Words',
           row,

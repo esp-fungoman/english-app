@@ -165,7 +165,6 @@ function UnitEditor({
             <input
               type="number"
               min={1}
-              max={10}
               required
               value={draft.sortOrder}
               onChange={(event) =>

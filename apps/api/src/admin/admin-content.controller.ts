@@ -258,11 +258,9 @@ export class AdminContentController {
       throw new BadRequestException('Khối không tồn tại');
     if (
       (create || body.sortOrder !== undefined) &&
-      (!Number.isInteger(body.sortOrder) ||
-        body.sortOrder! < 1 ||
-        body.sortOrder! > 10)
+      (!Number.isInteger(body.sortOrder) || body.sortOrder! < 1)
     )
-      throw new BadRequestException('Số unit từ 1 đến 10');
+      throw new BadRequestException('Số unit phải là số nguyên từ 1');
     if (
       body.groupMode !== undefined &&
       !Object.values(GroupMode).includes(body.groupMode)
