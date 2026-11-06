@@ -848,6 +848,7 @@ h1 {
   background: white;
   font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
   font-size: 2rem;
+  text-align: center;
   text-transform: uppercase;
 }
 .speaker-button {
@@ -976,6 +977,20 @@ h1 {
 }
 .answer-slot .letter-tile {
   margin: -2px;
+}
+/* Phrases: one slot group per word, a wider gap between words. */
+.answer-word {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: inherit;
+}
+.answer-slots--phrase .answer-word:not(:last-child) {
+  margin-inline-end: 0.9rem;
+}
+.letter-gap {
+  width: 1rem;
+  flex: none;
 }
 .audio-cue {
   margin: 0.4rem 0;
@@ -1569,6 +1584,12 @@ h1 {
     max-width: 67rem;
     gap: 0.65rem;
     margin-inline: auto;
+  }
+  .answer-slots--phrase .answer-word:not(:last-child) {
+    margin-inline-end: 1.5rem;
+  }
+  .letter-gap {
+    width: 1.75rem;
   }
   .letter-tile,
   .letter-placeholder,

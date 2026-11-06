@@ -24,13 +24,23 @@ export function letterChoices(
   prompt: Record<string, unknown>,
 ) {
   const isScramble = activity === 'scramble';
+  const slots = isScramble
+    ? ((prompt.letters as string[]) ?? []).length
+    : Number(prompt.blanks ?? 0);
+  // Phrases group slots per word ("fish and chips" → [4, 3, 5]); older prompts are one word.
+  const lengths = prompt.wordLengths as number[] | undefined;
+  const wordLengths =
+    Array.isArray(lengths) &&
+    lengths.length > 0 &&
+    lengths.reduce((sum, length) => sum + length, 0) === slots
+      ? lengths
+      : [slots];
   return {
     bank: isScramble
       ? 'abcdefghijklmnopqrstuvwxyz'.split('')
       : ((prompt.bank as string[]) ?? []),
-    slots: isScramble
-      ? ((prompt.letters as string[]) ?? []).length
-      : Number(prompt.blanks ?? 0),
+    slots,
+    wordLengths,
   };
 }
 

@@ -473,7 +473,9 @@ export default function PlayPage() {
     setHeard(true);
     setSpeaking(true);
     const parts =
-      activity === 'listen_spell' ? [word, ...word.split('')] : [word];
+      activity === 'listen_spell'
+        ? [word, ...word.replace(/\s+/g, '').split('')]
+        : [word];
     const finishSpeech = () => {
       if (run !== speechRun.current) return;
       if (speechTimer.current) window.clearTimeout(speechTimer.current);

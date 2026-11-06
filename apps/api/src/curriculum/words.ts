@@ -1,6 +1,14 @@
 import { ActivityType, Prisma } from '@prisma/client';
 import { buildGroupBoard } from '../play/group-board';
-import { isUsableWord, type CategoryChoice } from '../play/round';
+import {
+  gameLemmaProblem,
+  isGameLemma,
+  isUsableWord,
+  MAX_GAME_LETTERS,
+  MAX_GAME_WORD_LETTERS,
+  MAX_GAME_WORDS,
+  type CategoryChoice,
+} from '../play/round';
 
 export const unitWordInclude = {
   word: true,
@@ -45,15 +53,20 @@ export function playability(
   return Object.fromEntries(
     Object.values(ActivityType).map((activity) => {
       const usable = isUsableWord(activity, word, choices);
+      const problem = gameLemmaProblem(word.lemma);
       const reason = usable
         ? null
-        : !/^[a-z]+$/i.test(word.lemma)
-          ? 'Trò chơi hiện chỉ hỗ trợ từ đơn A–Z.'
-          : word.lemma.length > 12
-            ? 'Trò chơi hiện hỗ trợ tối đa 12 chữ.'
-            : activity === 'group'
-              ? 'Cần nhóm đúng và ít nhất một nhóm sai trong unit.'
-              : 'Cần ít nhất hai chữ cái khác nhau.';
+        : problem === 'letters'
+          ? 'Trò chơi chỉ hỗ trợ chữ A–Z và dấu cách.'
+          : problem === 'words'
+            ? `Trò chơi hỗ trợ cụm tối đa ${MAX_GAME_WORDS} từ.`
+            : problem === 'word-length'
+              ? `Mỗi từ trong trò chơi tối đa ${MAX_GAME_WORD_LETTERS} chữ.`
+              : problem === 'length'
+                ? `Trò chơi hỗ trợ tối đa ${MAX_GAME_LETTERS} chữ cái.`
+                : activity === 'group'
+                  ? 'Cần nhóm đúng và ít nhất một nhóm sai trong unit.'
+                  : 'Cần ít nhất hai chữ cái khác nhau.';
       return [activity, { usable, reason }];
     }),
   ) as Record<ActivityType, { usable: boolean; reason: string | null }>;
@@ -61,7 +74,7 @@ export function playability(
 export function boardAvailable(words: ReturnType<typeof flattenWord>[]) {
   return (
     buildGroupBoard(
-      words.filter((word) => /^[a-z]{1,12}$/i.test(word.lemma)),
+      words.filter((word) => isGameLemma(word.lemma)),
       choicesFor(words),
     ) !== null
   );

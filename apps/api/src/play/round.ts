@@ -44,8 +44,43 @@ export function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
+/** Game limits: A–Z words joined by single spaces; spaces are shown, never picked. */
+export const MAX_GAME_WORD_LETTERS = 12;
+export const MAX_GAME_LETTERS = 16;
+export const MAX_GAME_WORDS = 4;
+
+/** Lowercase lemma with single spaces, as games compare and display it. */
+export function gameLemma(lemma: string): string {
+  return lemma.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/** Letters to place, without spaces ("fish and chips" → fishandchips). */
 function lettersOf(word: string): string[] {
-  return word.toLowerCase().split('');
+  return gameLemma(word).replace(/ /g, '').split('');
+}
+
+/** Letter count of each word, so the UI can group slots ("fish and chips" → [4, 3, 5]). */
+function wordLengths(lemma: string): number[] {
+  return gameLemma(lemma)
+    .split(' ')
+    .map((part) => part.length);
+}
+
+export function gameLemmaProblem(
+  rawLemma: string,
+): 'letters' | 'word-length' | 'length' | 'words' | null {
+  const lemma = gameLemma(rawLemma);
+  if (!/^[a-z]+( [a-z]+)*$/.test(lemma)) return 'letters';
+  const lengths = wordLengths(lemma);
+  if (lengths.length > MAX_GAME_WORDS) return 'words';
+  if (lengths.some((length) => length > MAX_GAME_WORD_LETTERS))
+    return 'word-length';
+  if (lettersOf(lemma).length > MAX_GAME_LETTERS) return 'length';
+  return null;
+}
+
+export function isGameLemma(lemma: string): boolean {
+  return gameLemmaProblem(lemma) === null;
 }
 
 export function isUsableWord(
@@ -53,8 +88,8 @@ export function isUsableWord(
   word: RoundWord,
   allCategories: CategoryChoice[],
 ): boolean {
-  const lemma = word.lemma.trim().toLowerCase();
-  if (!/^[a-z]+$/.test(lemma) || lemma.length > 12) return false;
+  const lemma = gameLemma(word.lemma);
+  if (!isGameLemma(lemma)) return false;
   if (activity === ActivityType.group) {
     const accepted = new Set(word.categories.map((c) => c.categoryId));
     return accepted.size > 0 && allCategories.some((c) => !accepted.has(c.id));
@@ -69,7 +104,7 @@ export function buildPrompt(
   word: RoundWord,
   allCategories: CategoryChoice[],
 ) {
-  const lemma = word.lemma.trim().toLowerCase();
+  const lemma = gameLemma(word.lemma);
   if (activity === ActivityType.group) {
     const accepted = word.categories.map((c) => c.categoryId);
     const right = shuffle(
@@ -87,18 +122,21 @@ export function buildPrompt(
   }
   if (activity === ActivityType.odd_letter) {
     const extra = shuffle(ALPHABET.filter((c) => !lemma.includes(c)))[0];
-    const extraIndex = Math.floor(Math.random() * (lemma.length + 1));
-    const letters = lettersOf(lemma);
+    // Spaces stay in `letters` and render as gaps; spaces are single, so the
+    // extra letter always sticks to a word.
+    const letters = lemma.split('');
+    const extraIndex = Math.floor(Math.random() * (letters.length + 1));
     letters.splice(extraIndex, 0, extra);
     return { lemma, extra, extraIndex, letters };
   }
+  const lengths = wordLengths(lemma);
   if (activity === ActivityType.scramble) {
     const letters = shuffle(lettersOf(lemma));
-    if (letters.join('') === lemma) {
+    if (letters.join('') === lettersOf(lemma).join('')) {
       const different = letters.findIndex((c) => c !== letters[0]);
       [letters[0], letters[different]] = [letters[different], letters[0]];
     }
-    return { lemma, letters };
+    return { lemma, letters, wordLengths: lengths };
   }
   const distractors = shuffle(ALPHABET.filter((c) => !lemma.includes(c))).slice(
     0,
@@ -106,7 +144,8 @@ export function buildPrompt(
   );
   return {
     lemma,
-    blanks: lemma.length,
+    blanks: lettersOf(lemma).length,
+    wordLengths: lengths,
     bank: shuffle([...lettersOf(lemma), ...distractors]),
   };
 }
@@ -129,7 +168,11 @@ export function gradeAnswer(
       answer.letterIndex === prompt.extraIndex
     );
   }
-  return typeof answer.word === 'string' && answer.word.toLowerCase() === lemma;
+  // Students place letters only; spaces in the phrase are given.
+  return (
+    typeof answer.word === 'string' &&
+    answer.word.toLowerCase().replace(/\s+/g, '') === lemma.replace(/ /g, '')
+  );
 }
 
 export function correctionFor(

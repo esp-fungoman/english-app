@@ -23,7 +23,9 @@ import { buildGroupBoard } from './group-board';
 import {
   buildPrompt,
   correctionFor,
+  gameLemma,
   gradeAnswer,
+  isGameLemma,
   isUnitOpen,
   unitAccess,
   isUsableWord,
@@ -222,7 +224,7 @@ export class PlayController {
       const boardAvailable =
         unit.groupMode === GroupMode.board
           ? buildGroupBoard(
-              groupWords.filter((word) => /^[a-z]{1,12}$/i.test(word.lemma)),
+              groupWords.filter((word) => isGameLemma(word.lemma)),
               categories,
               unit.groupIncludePreviousUnits,
             ) !== null
@@ -270,7 +272,7 @@ export class PlayController {
     const board =
       unit.groupMode === GroupMode.board
         ? buildGroupBoard(
-            groupWords.filter((word) => /^[a-z]{1,12}$/i.test(word.lemma)),
+            groupWords.filter((word) => isGameLemma(word.lemma)),
             categories,
             unit.groupIncludePreviousUnits,
           )
@@ -344,7 +346,7 @@ export class PlayController {
     const board =
       activity === ActivityType.group && unit.groupMode === GroupMode.board
         ? buildGroupBoard(
-            pool.filter((word) => /^[a-z]{1,12}$/i.test(word.lemma)),
+            pool.filter((word) => isGameLemma(word.lemma)),
             categories,
             cumulative,
           )
@@ -370,7 +372,7 @@ export class PlayController {
               ? {
                   mode: GroupMode.board,
                   cumulative,
-                  lemma: word.lemma.trim().toLowerCase(),
+                  lemma: gameLemma(word.lemma),
                   acceptedCategoryIds: word.categories
                     .map((entry) => entry.categoryId)
                     .filter((id) =>

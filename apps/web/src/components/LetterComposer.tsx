@@ -8,6 +8,7 @@ export function LetterComposer({
   attemptId,
   bank,
   slots,
+  wordLengths = [slots],
   reusable = false,
   picked,
   setPicked,
@@ -18,6 +19,8 @@ export function LetterComposer({
   attemptId: string;
   bank: string[];
   slots: number;
+  /** Letters per word; a phrase shows a gap between word groups. */
+  wordLengths?: number[];
   reusable?: boolean;
   picked: number[];
   setPicked: (next: number[]) => void;
@@ -48,30 +51,47 @@ export function LetterComposer({
   return (
     <div className="letter-workspace">
       <LayoutGroup id={attemptId}>
-        <div className="answer-slots" aria-label="Các ô chữ đã chọn">
-          {Array.from({ length: slots }, (_, position) => {
-            const tileIndex = picked[position];
+        <div
+          className={`answer-slots${wordLengths.length > 1 ? ' answer-slots--phrase' : ''}`}
+          aria-label={
+            wordLengths.length > 1
+              ? `Các ô chữ đã chọn, cụm ${wordLengths.length} từ`
+              : 'Các ô chữ đã chọn'
+          }
+        >
+          {wordLengths.map((length, word) => {
+            const start = wordLengths
+              .slice(0, word)
+              .reduce((sum, value) => sum + value, 0);
             return (
-              <div className="answer-slot" key={position}>
-                {tileIndex !== undefined ? (
-                  <motion.button
-                    ref={(node) => {
-                      slotRefs.current[position] = node;
-                    }}
-                    layoutId={reusable ? undefined : `tile-${tileIndex}`}
-                    type="button"
-                    className="letter-tile letter-tile--placed"
-                    onClick={() => remove(position)}
-                    disabled={locked}
-                    aria-label={`Gỡ chữ ${bank[tileIndex]?.toUpperCase()} ở ô ${position + 1}`}
-                  >
-                    {bank[tileIndex]?.toUpperCase()}
-                  </motion.button>
-                ) : (
-                  <span className="slot-number" aria-hidden>
-                    {position + 1}
-                  </span>
-                )}
+              <div className="answer-word" key={word}>
+                {Array.from({ length }, (_, offset) => {
+                  const position = start + offset;
+                  const tileIndex = picked[position];
+                  return (
+                    <div className="answer-slot" key={position}>
+                      {tileIndex !== undefined ? (
+                        <motion.button
+                          ref={(node) => {
+                            slotRefs.current[position] = node;
+                          }}
+                          layoutId={reusable ? undefined : `tile-${tileIndex}`}
+                          type="button"
+                          className="letter-tile letter-tile--placed"
+                          onClick={() => remove(position)}
+                          disabled={locked}
+                          aria-label={`Gỡ chữ ${bank[tileIndex]?.toUpperCase()} ở ô ${position + 1}`}
+                        >
+                          {bank[tileIndex]?.toUpperCase()}
+                        </motion.button>
+                      ) : (
+                        <span className="slot-number" aria-hidden>
+                          {position + 1}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}

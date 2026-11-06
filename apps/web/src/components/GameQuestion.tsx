@@ -101,6 +101,14 @@ export function GameQuestion({
         <div className="letter-bank odd-bank" aria-label="Chọn chữ cái thừa">
           <AnimatePresence mode="popLayout">
             {letters.map((letter, index) => {
+              if (letter === ' ')
+                return (
+                  <span
+                    key={`${item.attemptId}-${index}`}
+                    className="letter-gap"
+                    aria-hidden
+                  />
+                );
               const chosen = selectedLetter === index;
               const right =
                 feedback &&
@@ -136,7 +144,7 @@ export function GameQuestion({
   }
 
   const isListen = activity === 'listen_spell';
-  const { bank, slots } = letterChoices(activity, prompt);
+  const { bank, slots, wordLengths } = letterChoices(activity, prompt);
   return (
     <div
       className={`game-question-body spelling-stage${isListen ? ' spelling-stage--listen' : ''}`}
@@ -163,6 +171,7 @@ export function GameQuestion({
         attemptId={item.attemptId}
         bank={bank}
         slots={slots}
+        wordLengths={wordLengths}
         reusable={activity === 'scramble'}
         picked={picked}
         setPicked={setPicked}

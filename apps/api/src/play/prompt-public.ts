@@ -11,7 +11,16 @@ export function publicPrompt(
     return { lemma: prompt.lemma, letters: prompt.letters };
   }
   if (activity === ActivityType.scramble) {
-    return { letters: prompt.letters, speechText: prompt.lemma };
+    return {
+      letters: prompt.letters,
+      wordLengths: prompt.wordLengths,
+      speechText: prompt.lemma,
+    };
   }
-  return { blanks: prompt.blanks, bank: prompt.bank, speechText: prompt.lemma };
+  return {
+    blanks: prompt.blanks,
+    wordLengths: prompt.wordLengths,
+    bank: prompt.bank,
+    speechText: prompt.lemma,
+  };
 }
