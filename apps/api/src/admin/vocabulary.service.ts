@@ -9,7 +9,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   boardAvailable,
   choicesFor,
+  cleanLemma,
   flattenWord,
+  lemmaInitial,
   normalize,
   playability,
   searchable,
@@ -158,7 +160,14 @@ export class VocabularyService {
     const words = await this.prisma.word.findMany({
       where: {
         ...(q ? { searchText: { contains: q } } : {}),
-        ...(query.lemma ? { lemma: normalize(query.lemma) } : {}),
+        ...(query.lemma
+          ? {
+              lemma: {
+                equals: cleanLemma(query.lemma),
+                mode: 'insensitive' as const,
+              },
+            }
+          : {}),
       },
       include: wordInclude,
       orderBy: [{ lemma: 'asc' }, { meaningKey: 'asc' }, { id: 'asc' }],
@@ -222,7 +231,7 @@ export class VocabularyService {
   async save(input: WordInput, id?: string) {
     if (!input || typeof input !== 'object')
       throw new BadRequestException('Dữ liệu từ không hợp lệ');
-    const lemma = normalize(cleanText(input.lemma, 'từ/cụm từ', 120, true)!);
+    const lemma = cleanLemma(cleanText(input.lemma, 'từ/cụm từ', 120, true)!);
     const meaningVi = cleanText(input.meaningVi, 'nghĩa tiếng Việt', 120);
     const meaningKey = normalize(meaningVi ?? '');
     const partOfSpeech = cleanText(input.partOfSpeech, 'loại từ', 30);
@@ -271,21 +280,25 @@ export class VocabularyService {
             })) !== allCategories.length
           )
             throw new BadRequestException('Unit hoặc category không tồn tại');
-          if (
-            !meaningVi &&
-            (await tx.word.count({
-              where: { lemma, ...(id ? { id: { not: id } } : {}) },
-            }))
-          )
+          // Spelling is unique regardless of case: "America" and "america" are one word.
+          const sameSpelling = {
+            lemma: { equals: lemma, mode: 'insensitive' as const },
+            ...(id ? { id: { not: id } } : {}),
+          };
+          if (!meaningVi && (await tx.word.count({ where: sameSpelling })))
             throw new ConflictException(
               'Từ đã có. Hãy chọn hồ sơ có sẵn hoặc nhập nghĩa khác.',
+            );
+          if (await tx.word.count({ where: { ...sameSpelling, meaningKey } }))
+            throw new ConflictException(
+              'Từ và nghĩa đã có. Hãy chọn hồ sơ có sẵn.',
             );
           const data = {
             lemma,
             meaningVi,
             meaningKey,
             searchText: searchable(`${lemma} ${meaningVi ?? ''}`),
-            initial: /^[a-z]/.test(lemma) ? lemma[0].toUpperCase() : '#',
+            initial: lemmaInitial(lemma),
             partOfSpeech,
             imageKey,
             audioKey,

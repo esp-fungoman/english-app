@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ActivityType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { normalize, searchable } from '../curriculum/words';
+import { lemmaInitial, normalize, searchable } from '../curriculum/words';
 import {
   type ImportIssue,
   type ImportWord,
@@ -14,7 +14,12 @@ import {
 } from './word-import.parser';
 
 type Client = PrismaService | Prisma.TransactionClient;
-type ResolvedWord = ImportWord & { existingId?: string; meaningKey: string };
+type ResolvedWord = ImportWord & {
+  existingId?: string;
+  /** Set when the file brings capitals the stored word lacks (e.g. "america" → "America"). */
+  recase?: boolean;
+  meaningKey: string;
+};
 @Injectable()
 export class WordImportService {
   constructor(private readonly prisma: PrismaService) {}
@@ -74,7 +79,10 @@ export class WordImportService {
       client.category.findMany(),
       client.word.findMany({
         where: {
-          lemma: { in: [...new Set(parsed.words.map((word) => word.lemma))] },
+          lemma: {
+            in: [...new Set(parsed.words.map((word) => word.lemma))],
+            mode: 'insensitive',
+          },
         },
         include: { units: true },
       }),
@@ -128,11 +136,15 @@ export class WordImportService {
     }
     const seen = new Map<string, ResolvedWord>();
     for (const incoming of parsed.words) {
-      const matches = words.filter((word) => word.lemma === incoming.lemma);
+      // Spelling matches ignore case; the stored lemma keeps the file's capitals.
+      const lemmaKey = normalize(incoming.lemma);
+      const sameLemma = (word: { lemma: string }) =>
+        normalize(word.lemma) === lemmaKey;
+      const matches = words.filter(sameLemma);
       const fileMeanings = [
         ...new Set(
           parsed.words
-            .filter((word) => word.lemma === incoming.lemma && word.meaningVi)
+            .filter((word) => sameLemma(word) && word.meaningVi)
             .map((word) => normalize(word.meaningVi)),
         ),
       ];
@@ -143,7 +155,7 @@ export class WordImportService {
             (word) => [word.meaningKey, word.meaningVi ?? ''] as const,
           ),
           ...parsed.words
-            .filter((word) => word.lemma === incoming.lemma && word.meaningVi)
+            .filter((word) => sameLemma(word) && word.meaningVi)
             .map(
               (word) => [normalize(word.meaningVi), word.meaningVi] as const,
             ),
@@ -159,7 +171,7 @@ export class WordImportService {
         meaningVi = [...senses.values()][0] ?? '';
       }
       const meaningKey = normalize(meaningVi);
-      const key = `${incoming.lemma}\u0000${meaningKey}`;
+      const key = `${lemmaKey}\u0000${meaningKey}`;
       const existing = matches.find((word) => word.meaningKey === meaningKey);
       const current = seen.get(key);
       const word = {
@@ -167,7 +179,15 @@ export class WordImportService {
         meaningVi,
         meaningKey,
         existingId: existing?.id,
+        recase:
+          !!existing &&
+          existing.lemma !== incoming.lemma &&
+          /[A-Z]/.test(incoming.lemma),
       };
+      if (word.recase)
+        warnings.push(
+          `Dòng ${incoming.row}: sẽ sửa cách viết "${existing!.lemma}" thành "${incoming.lemma}".`,
+        );
       if (
         existing?.partOfSpeech &&
         incoming.partOfSpeech &&
@@ -202,7 +222,7 @@ export class WordImportService {
     }
     const linkKeys = new Set<string>();
     for (const word of resolved) {
-      const key = `${word.unitCode}:${word.lemma}:${word.meaningKey}`;
+      const key = `${word.unitCode}:${normalize(word.lemma)}:${word.meaningKey}`;
       if (linkKeys.has(key))
         issue(word.row, 'lemma', 'Trùng từ và nghĩa trong cùng unit.');
       linkKeys.add(key);
@@ -247,36 +267,47 @@ export class WordImportService {
       });
       categoryIds.set(category.code, saved.id);
     }
+    // Rows of the same word (case-insensitive) in one file share one profile.
+    const wordIds = new Map<string, string>();
     for (const word of resolved) {
       const categories = word.categoryCodes.map(
         (code) => categoryIds.get(code)!,
       );
-      const saved = await tx.word.upsert({
-        where: {
-          lemma_meaningKey: { lemma: word.lemma, meaningKey: word.meaningKey },
-        },
-        create: {
-          lemma: word.lemma,
-          meaningKey: word.meaningKey,
-          meaningVi: word.meaningVi || null,
-          partOfSpeech: word.partOfSpeech || null,
-          searchText: searchable(`${word.lemma} ${word.meaningVi}`),
-          initial: /^[a-z]/.test(word.lemma)
-            ? word.lemma[0].toUpperCase()
-            : '#',
-          categories: {
-            create: categories.map((categoryId) => ({ categoryId })),
+      const key = `${normalize(word.lemma)}\u0000${word.meaningKey}`;
+      let wordId = word.existingId ?? wordIds.get(key);
+      if (word.existingId && word.recase)
+        await tx.word.update({
+          where: { id: word.existingId },
+          data: {
+            lemma: word.lemma,
+            searchText: searchable(`${word.lemma} ${word.meaningVi}`),
+            initial: lemmaInitial(word.lemma),
           },
-        },
-        update: {},
-      });
+        });
+      if (!wordId) {
+        const created = await tx.word.create({
+          data: {
+            lemma: word.lemma,
+            meaningKey: word.meaningKey,
+            meaningVi: word.meaningVi || null,
+            partOfSpeech: word.partOfSpeech || null,
+            searchText: searchable(`${word.lemma} ${word.meaningVi}`),
+            initial: lemmaInitial(word.lemma),
+            categories: {
+              create: categories.map((categoryId) => ({ categoryId })),
+            },
+          },
+        });
+        wordId = created.id;
+      }
+      wordIds.set(key, wordId);
       const unitId = unitIds.get(word.unitCode)!;
       // Existing link categories and history survive reimport; detached links are reactivated.
       await tx.unitWord.upsert({
-        where: { unitId_wordId: { unitId, wordId: saved.id } },
+        where: { unitId_wordId: { unitId, wordId } },
         create: {
           unitId,
-          wordId: saved.id,
+          wordId,
           categories: {
             create: categories.map((categoryId) => ({ categoryId })),
           },

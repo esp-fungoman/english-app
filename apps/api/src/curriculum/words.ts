@@ -47,7 +47,7 @@ export function playability(
       const usable = isUsableWord(activity, word, choices);
       const reason = usable
         ? null
-        : !/^[a-z]+$/.test(word.lemma)
+        : !/^[a-z]+$/i.test(word.lemma)
           ? 'Trò chơi hiện chỉ hỗ trợ từ đơn A–Z.'
           : word.lemma.length > 12
             ? 'Trò chơi hiện hỗ trợ tối đa 12 chữ.'
@@ -61,13 +61,20 @@ export function playability(
 export function boardAvailable(words: ReturnType<typeof flattenWord>[]) {
   return (
     buildGroupBoard(
-      words.filter((word) => /^[a-z]{1,12}$/.test(word.lemma)),
+      words.filter((word) => /^[a-z]{1,12}$/i.test(word.lemma)),
       choicesFor(words),
     ) !== null
   );
 }
 export function normalize(value: string) {
-  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+  return cleanLemma(value).toLowerCase();
+}
+/** Trims and collapses spaces but keeps capitals, so proper nouns like "America" survive. */
+export function cleanLemma(value: string) {
+  return value.trim().replace(/\s+/g, ' ');
+}
+export function lemmaInitial(lemma: string) {
+  return /^[a-z]/i.test(lemma) ? lemma[0].toUpperCase() : '#';
 }
 export function searchable(value: string) {
   return normalize(value)

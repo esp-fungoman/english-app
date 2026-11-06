@@ -1,5 +1,5 @@
 import { Workbook, type Cell, type Worksheet } from 'exceljs';
-import { normalize } from '../curriculum/words';
+import { cleanLemma, normalize } from '../curriculum/words';
 import { GroupMode } from '@prisma/client';
 
 export type ImportIssue = {
@@ -242,7 +242,7 @@ export async function parseWordImport(buffer: Buffer): Promise<ParsedImport> {
     [1, 4, 5, 6, 7, 8, 9, 10],
     (row, get) => {
       const unitCode = get(1).toUpperCase();
-      const lemma = normalize(get(4));
+      const lemma = cleanLemma(get(4));
       const meaningVi = get(5);
       const partOfSpeech = get(6).toLowerCase();
       const categoryCodes = [7, 8, 9, 10]
@@ -318,7 +318,7 @@ export async function parseWordImport(buffer: Buffer): Promise<ParsedImport> {
       'Words',
       word.row,
       'lemma',
-      `${word.unitCode}:${word.lemma}:${normalize(word.meaningVi)}`,
+      `${word.unitCode}:${normalize(word.lemma)}:${normalize(word.meaningVi)}`,
     );
   const units = new Set(result.units.map((unit) => unit.code));
   const categories = new Set(
