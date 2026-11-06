@@ -474,7 +474,7 @@ export default function PlayPage() {
     setSpeaking(true);
     const parts =
       activity === 'listen_spell'
-        ? [word, ...word.replace(/\s+/g, '').split('')]
+        ? [word, ...word.replace(/[^a-z]/gi, '').split('')]
         : [word];
     const finishSpeech = () => {
       if (run !== speechRun.current) return;

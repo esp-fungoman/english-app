@@ -6,7 +6,7 @@ Tap-to-place, target ≥ 44px. Không hearts.
 
 ## Từ và cụm từ trong game
 
-Game nhận từ đơn hoặc cụm từ: chữ A–Z, các từ cách nhau một dấu cách, tối đa 4 từ, mỗi từ tối đa 12 chữ và tổng tối đa 16 chữ cái (không tính dấu cách). Game so khớp không phân biệt hoa thường. Dấu cách luôn được cho sẵn: học sinh không phải chọn dấu cách, ô chữ chia nhóm theo từng từ, chấm điểm bỏ qua dấu cách. Từ/cụm khác vẫn lưu được và Admin hiện lý do.
+Game nhận từ đơn hoặc cụm từ: chữ A–Z, các phần nối bằng một dấu cách, gạch nối hoặc dấu nháy (`fish and chips`, `yo-yo`, `o'clock`), tối đa 4 phần, mỗi phần tối đa 12 chữ và tổng tối đa 20 chữ cái (không tính dấu nối). Game so khớp không phân biệt hoa thường; dấu nháy cong được coi như dấu nháy thẳng. Dấu nối luôn được cho sẵn: học sinh không phải chọn, ô chữ chia nhóm theo từng phần (gạch nối/dấu nháy hiện giữa hai nhóm), chấm điểm chỉ so chữ cái. Ô chữ tự thu nhỏ (tối thiểu 30px) để mỗi phần nằm trên một hàng khi đủ chỗ. Từ/cụm khác vẫn lưu được và Admin hiện lý do.
 
 ## group
 
@@ -26,4 +26,4 @@ Nghe từ rồi chọn chữ từ bảng đầy đủ A–Z theo thứ tự đ�
 
 ## listen_spell
 
-Tap loa: `speechSynthesis` đọc lemma rồi từng chữ, bỏ qua dấu cách (`en-US`). Ảnh từ. Ô trống (chia nhóm theo từ) + bank = chữ trong từ + 4 distractor. Tap chữ vào ô.
+Tap loa: `speechSynthesis` đọc lemma rồi từng chữ, bỏ qua dấu nối (`en-US`). Ảnh từ. Ô trống (chia nhóm theo từ) + bank = chữ trong từ + 4 distractor. Tap chữ vào ô.

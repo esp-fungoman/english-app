@@ -57,7 +57,7 @@ export function playability(
       const reason = usable
         ? null
         : problem === 'letters'
-          ? 'Trò chơi chỉ hỗ trợ chữ A–Z và dấu cách.'
+          ? "Trò chơi chỉ hỗ trợ chữ A–Z, dấu cách, gạch nối (-) và dấu nháy (')."
           : problem === 'words'
             ? `Trò chơi hỗ trợ cụm tối đa ${MAX_GAME_WORDS} từ.`
             : problem === 'word-length'

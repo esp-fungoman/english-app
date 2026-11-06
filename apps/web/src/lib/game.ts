@@ -35,12 +35,21 @@ export function letterChoices(
     lengths.reduce((sum, length) => sum + length, 0) === slots
       ? lengths
       : [slots];
+  // Mark after each word but the last: space, hyphen ("yo-yo") or apostrophe ("o'clock").
+  const marks = prompt.separators as unknown;
+  const separators =
+    Array.isArray(marks) &&
+    marks.length === wordLengths.length - 1 &&
+    marks.every((mark) => [' ', '-', "'"].includes(mark))
+      ? (marks as string[])
+      : wordLengths.slice(1).map(() => ' ');
   return {
     bank: isScramble
       ? 'abcdefghijklmnopqrstuvwxyz'.split('')
       : ((prompt.bank as string[]) ?? []),
     slots,
     wordLengths,
+    separators,
   };
 }
 

@@ -12,7 +12,7 @@ Cột Postgres **snake_case**. Prisma field camelCase + `@map`. Bảng plural sn
 - `unit_words`: liên kết từ–unit, unique `(unit_id, word_id)`, có `active`. Gỡ liên kết chỉ đặt false; gắn lại tái sử dụng ID, giữ lịch sử.
 - `word_categories`: category mặc định của hồ sơ. `unit_word_categories`: category riêng của liên kết trong unit. Khi gắn lần đầu, sao chép mặc định; thay mặc định không tự đổi các liên kết cũ.
 - `categories`: `slug`, `title_vi`. `unit_activities`: hoạt động bật trong từng unit.
-- Hồ sơ cho phép từ/cụm từ tối đa 120 ký tự; game nhận từ/cụm từ A–Z, tối đa 4 từ, mỗi từ ≤ 12 chữ, tổng ≤ 16 chữ cái (xem `ACTIVITIES.md`). Lemma giữ chữ hoa như khi nhập (tên riêng); so trùng cách viết không phân biệt hoa thường. Admin hiển thị trạng thái hoạt động và lý do chưa phù hợp.
+- Hồ sơ cho phép từ/cụm từ tối đa 120 ký tự; game nhận từ/cụm từ A–Z nối bằng dấu cách, gạch nối hoặc dấu nháy, tối đa 4 phần, mỗi phần ≤ 12 chữ, tổng ≤ 20 chữ cái (xem `ACTIVITIES.md`). Lemma giữ chữ hoa như khi nhập (tên riêng); so trùng cách viết không phân biệt hoa thường. Admin hiển thị trạng thái hoạt động và lý do chưa phù hợp.
 
 Không có bảng Game / Question cho 4 trò chơi unit; round sinh từ nội dung lúc chơi. Ôn nhanh có session/question riêng.
 

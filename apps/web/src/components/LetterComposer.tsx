@@ -9,6 +9,7 @@ export function LetterComposer({
   bank,
   slots,
   wordLengths = [slots],
+  separators = [],
   reusable = false,
   picked,
   setPicked,
@@ -21,6 +22,8 @@ export function LetterComposer({
   slots: number;
   /** Letters per word; a phrase shows a gap between word groups. */
   wordLengths?: number[];
+  /** Mark after each word but the last; "-" and "'" are drawn, a space is a gap. */
+  separators?: string[];
   reusable?: boolean;
   picked: number[];
   setPicked: (next: number[]) => void;
@@ -53,6 +56,9 @@ export function LetterComposer({
       <LayoutGroup id={attemptId}>
         <div
           className={`answer-slots${wordLengths.length > 1 ? ' answer-slots--phrase' : ''}`}
+          style={
+            { '--longest': Math.max(...wordLengths) } as React.CSSProperties
+          }
           aria-label={
             wordLengths.length > 1
               ? `Các ô chữ đã chọn, cụm ${wordLengths.length} từ`
@@ -63,8 +69,13 @@ export function LetterComposer({
             const start = wordLengths
               .slice(0, word)
               .reduce((sum, value) => sum + value, 0);
+            const mark = separators[word];
+            const joined = mark === '-' || mark === "'";
             return (
-              <div className="answer-word" key={word}>
+              <div
+                className={`answer-word${joined ? ' answer-word--joined' : ''}`}
+                key={word}
+              >
                 {Array.from({ length }, (_, offset) => {
                   const position = start + offset;
                   const tileIndex = picked[position];
@@ -92,6 +103,14 @@ export function LetterComposer({
                     </div>
                   );
                 })}
+                {joined ? (
+                  <span
+                    className={`word-joiner${mark === "'" ? ' word-joiner--apostrophe' : ''}`}
+                    aria-hidden
+                  >
+                    {mark === '-' ? '-' : '’'}
+                  </span>
+                ) : null}
               </div>
             );
           })}

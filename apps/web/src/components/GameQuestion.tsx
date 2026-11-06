@@ -109,6 +109,16 @@ export function GameQuestion({
                     aria-hidden
                   />
                 );
+              if (letter === '-' || letter === "'")
+                return (
+                  <span
+                    key={`${item.attemptId}-${index}`}
+                    className={`letter-joiner${letter === "'" ? ' word-joiner--apostrophe' : ''}`}
+                    aria-hidden
+                  >
+                    {letter === '-' ? '-' : '’'}
+                  </span>
+                );
               const chosen = selectedLetter === index;
               const right =
                 feedback &&
@@ -144,7 +154,10 @@ export function GameQuestion({
   }
 
   const isListen = activity === 'listen_spell';
-  const { bank, slots, wordLengths } = letterChoices(activity, prompt);
+  const { bank, slots, wordLengths, separators } = letterChoices(
+    activity,
+    prompt,
+  );
   return (
     <div
       className={`game-question-body spelling-stage${isListen ? ' spelling-stage--listen' : ''}`}
@@ -172,6 +185,7 @@ export function GameQuestion({
         bank={bank}
         slots={slots}
         wordLengths={wordLengths}
+        separators={separators}
         reusable={activity === 'scramble'}
         picked={picked}
         setPicked={setPicked}

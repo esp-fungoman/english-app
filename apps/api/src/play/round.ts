@@ -44,33 +44,50 @@ export function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
-/** Game limits: A–Z words joined by single spaces; spaces are shown, never picked. */
+/**
+ * Game limits: A–Z parts joined by one separator — space, hyphen or
+ * apostrophe ("fish and chips", "yo-yo", "o'clock"). Separators are shown,
+ * never picked.
+ */
 export const MAX_GAME_WORD_LETTERS = 12;
-export const MAX_GAME_LETTERS = 16;
+export const MAX_GAME_LETTERS = 20;
 export const MAX_GAME_WORDS = 4;
+const SEPARATOR = /[ '-]/;
 
-/** Lowercase lemma with single spaces, as games compare and display it. */
+/** Lowercase lemma with single spaces and straight apostrophes, as games compare and display it. */
 export function gameLemma(lemma: string): string {
-  return lemma.trim().replace(/\s+/g, ' ').toLowerCase();
+  return lemma
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/ ?- ?/g, '-')
+    .replace(/[‘’`]/g, "'")
+    .toLowerCase();
 }
 
-/** Letters to place, without spaces ("fish and chips" → fishandchips). */
+/** Letters to place, without separators ("yo-yo" → yoyo). */
 function lettersOf(word: string): string[] {
-  return gameLemma(word).replace(/ /g, '').split('');
+  return gameLemma(word)
+    .replace(/[^a-z]/g, '')
+    .split('');
 }
 
-/** Letter count of each word, so the UI can group slots ("fish and chips" → [4, 3, 5]). */
+/** Letter count of each part, so the UI can group slots ("fish and chips" → [4, 3, 5]). */
 function wordLengths(lemma: string): number[] {
   return gameLemma(lemma)
-    .split(' ')
+    .split(SEPARATOR)
     .map((part) => part.length);
+}
+
+/** Separator after each part but the last ("yo-yo" → ["-"]). */
+function separators(lemma: string): string[] {
+  return gameLemma(lemma).match(/[ '-]/g) ?? [];
 }
 
 export function gameLemmaProblem(
   rawLemma: string,
 ): 'letters' | 'word-length' | 'length' | 'words' | null {
   const lemma = gameLemma(rawLemma);
-  if (!/^[a-z]+( [a-z]+)*$/.test(lemma)) return 'letters';
+  if (!/^[a-z]+([ '-][a-z]+)*$/.test(lemma)) return 'letters';
   const lengths = wordLengths(lemma);
   if (lengths.length > MAX_GAME_WORDS) return 'words';
   if (lengths.some((length) => length > MAX_GAME_WORD_LETTERS))
@@ -122,21 +139,22 @@ export function buildPrompt(
   }
   if (activity === ActivityType.odd_letter) {
     const extra = shuffle(ALPHABET.filter((c) => !lemma.includes(c)))[0];
-    // Spaces stay in `letters` and render as gaps; spaces are single, so the
-    // extra letter always sticks to a word.
+    // Separators stay in `letters` and render as gaps or marks; they are
+    // single, so the extra letter always sticks to a word.
     const letters = lemma.split('');
     const extraIndex = Math.floor(Math.random() * (letters.length + 1));
     letters.splice(extraIndex, 0, extra);
     return { lemma, extra, extraIndex, letters };
   }
   const lengths = wordLengths(lemma);
+  const joins = separators(lemma);
   if (activity === ActivityType.scramble) {
     const letters = shuffle(lettersOf(lemma));
     if (letters.join('') === lettersOf(lemma).join('')) {
       const different = letters.findIndex((c) => c !== letters[0]);
       [letters[0], letters[different]] = [letters[different], letters[0]];
     }
-    return { lemma, letters, wordLengths: lengths };
+    return { lemma, letters, wordLengths: lengths, separators: joins };
   }
   const distractors = shuffle(ALPHABET.filter((c) => !lemma.includes(c))).slice(
     0,
@@ -146,6 +164,7 @@ export function buildPrompt(
     lemma,
     blanks: lettersOf(lemma).length,
     wordLengths: lengths,
+    separators: joins,
     bank: shuffle([...lettersOf(lemma), ...distractors]),
   };
 }
@@ -168,10 +187,11 @@ export function gradeAnswer(
       answer.letterIndex === prompt.extraIndex
     );
   }
-  // Students place letters only; spaces in the phrase are given.
+  // Students place letters only; separators in the phrase are given.
   return (
     typeof answer.word === 'string' &&
-    answer.word.toLowerCase().replace(/\s+/g, '') === lemma.replace(/ /g, '')
+    answer.word.toLowerCase().replace(/[^a-z]/g, '') ===
+      lemma.replace(/[^a-z]/g, '')
   );
 }
 

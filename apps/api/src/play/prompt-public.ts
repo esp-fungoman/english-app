@@ -14,12 +14,14 @@ export function publicPrompt(
     return {
       letters: prompt.letters,
       wordLengths: prompt.wordLengths,
+      separators: prompt.separators,
       speechText: prompt.lemma,
     };
   }
   return {
     blanks: prompt.blanks,
     wordLengths: prompt.wordLengths,
+    separators: prompt.separators,
     bank: prompt.bank,
     speechText: prompt.lemma,
   };
